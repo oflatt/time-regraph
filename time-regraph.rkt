@@ -74,6 +74,12 @@
      "timing-upwards"]))
 
 (define (time-suite filename)
+  (define average-port
+    (open-input-file (build-path (current-directory)
+                                 (folder-string)
+                                 "averages.txt")
+                     #:exists? 'replace))
+  
   (for ([i (range 8)])
     (define exprs-name
       (substring (path->string filename) 0 (- (string-length (path->string filename)) 4)))
@@ -106,24 +112,39 @@
                                       exprs-name "-iters.txt")))
           #f))
 
-    (for ([regraph all-regraphs] [i (length all-regraphs)])
-      (display "Regraph " )
-      (displayln (number->string i))
-      (flush-output)
-      (define iteration-limit
-        (if (rebuilding?)
-            (read iters-file-in)
-            10000000))
-      (define begin-time (current-inexact-milliseconds))
-      (define begin-merge merge-time)
-      (define begin-rebuild rebuild-time)
-      (run-regraph regraph iteration-limit node-limit iters-file-out)
-      (define after (current-inexact-milliseconds))
-      (render-regraph-info (list regraph) time-file
-                           (list
-                            (- after begin-time)
-                            (- merge-time begin-merge)
-                            (- rebuild-time begin-rebuild))))))
+    (define all-data
+      (for/list ([regraph all-regraphs] [i (length all-regraphs)])
+        (display "Regraph " )
+        (displayln (number->string i))
+        (flush-output)
+        (define iteration-limit
+          (if (rebuilding?)
+              (read iters-file-in)
+              10000000))
+        (define begin-time (current-inexact-milliseconds))
+        (define begin-merge merge-time)
+        (define begin-rebuild rebuild-time)
+        (run-regraph regraph iteration-limit node-limit iters-file-out)
+        (define after (current-inexact-milliseconds))
+        (define data
+          (list
+           (- after begin-time)
+           (- merge-time begin-merge)
+           (- rebuild-time begin-rebuild)))
+        (render-regraph-info (list regraph) time-file
+                             data)))
+    (define averages
+      (list
+       (/ (sum
+           (for/list ([a all-data]) (first a))) (length all-data))
+       (/ (sum
+           (for/list ([a all-data]) (second a))) (length all-data))
+       (/ (sum
+           (for/list ([a all-data]) (third a))) (length all-data))))
+    (render-regraph-with-port
+     (list regraph)
+     average-port
+     averages)))
      
 
 (module+ main
