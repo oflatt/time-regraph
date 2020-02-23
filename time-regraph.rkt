@@ -1,7 +1,7 @@
 #lang racket
 
-(require regraph)
-
+(require "../regraph/main.rkt")
+(require "../regraph/egraph.rkt")
 (require (except-in profile profile))
 (require profile/render-text)
 (require profile/analyzer)
@@ -54,28 +54,24 @@
   (unless (rebuilding?)
     (displayln (+ last-i 1) iters-file)))
 
-(define (render-regraph-info all-regraphs time-file data order)
-  (display (exact->inexact (/(profile-total-time data) (length all-regraphs))) time-file)
-  (display " " time-file)
-  (display (for/or ([node (profile-nodes data)])
-           (cond
-             [(equal? (node-id node) 'merge-egraph-nodes!)
-              (exact->inexact (/ (node-total node) (length all-regraphs)))]
-             [else #f]))
-         time-file)
-  (displayln (for/or ([node (profile-nodes data)])
-             (cond
-               [(equal? (node-id node) 'egraph-rebuild)
-                (exact->inexact (/ (node-total node) (length all-regraphs)))]
-               [else #f]))
-           time-file))
+(define (render-regraph-info-with-port all-regraphs port data)
+  (display (exact->inexact (/ (first data) (length all-regraphs))) port)
+  (for ([ele (rest data)])
+    (display ", " port)
+    (display (exact->inexact (/ ele (length all-regraphs))) port))
+  (display "\n" port))
+  
+
+(define (render-regraph-info all-regraphs time-file data)
+  (render-regraph-info-with-port all-regraphs time-file data)
+  (render-regraph-info-with-port all-regraphs (current-output-port) data))
 
 (define (folder-string)
   (cond
     [(rebuilding?)
-     "timing-upwards"]
+     "timing-rebuilding"]
     [else
-     "timing-rebuilding"]))
+     "timing-upwards"]))
 
 (define (time-suite filename)
   (for ([i (range 8)])
@@ -118,9 +114,16 @@
         (if (rebuilding?)
             (read iters-file-in)
             10000000))
-      (profile-thunk
-       (lambda () (run-regraph regraph iteration-limit node-limit iters-file-out))
-       #:render (curry render-regraph-info (list regraph) time-file)))))
+      (define begin-time (current-inexact-milliseconds))
+      (define begin-merge merge-time)
+      (define begin-rebuild rebuild-time)
+      (run-regraph regraph iteration-limit node-limit iters-file-out)
+      (define after (current-inexact-milliseconds))
+      (render-regraph-info (list regraph) time-file
+                           (list
+                            (- after begin-time)
+                            (- merge-time begin-merge)
+                            (- rebuild-time begin-rebuild))))))
      
 
 (module+ main
