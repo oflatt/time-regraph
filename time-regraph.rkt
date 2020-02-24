@@ -8,6 +8,7 @@
 
 
 (define rebuilding? (make-parameter #f))
+(define number-timing-iterations (make-parameter 4))
 
 (define rules-exprs-port (open-input-file "./rules.txt"))
 (define rules-in (read rules-exprs-port))
@@ -75,12 +76,12 @@
 
 (define (time-suite filename)
   (define average-port
-    (open-input-file (build-path (current-directory)
+    (open-output-file (build-path (current-directory)
                                  (folder-string)
                                  "averages.txt")
-                     #:exists? 'replace))
+                     #:exists 'replace))
   
-  (for ([i (range 8)])
+  (for ([i (range (number-timing-iterations))])
     (define exprs-name
       (substring (path->string filename) 0 (- (string-length (path->string filename)) 4)))
     (define node-limit (+ 2500 (* i 2500)))
@@ -135,14 +136,11 @@
                              data)))
     (define averages
       (list
-       (/ (sum
-           (for/list ([a all-data]) (first a))) (length all-data))
-       (/ (sum
-           (for/list ([a all-data]) (second a))) (length all-data))
-       (/ (sum
-           (for/list ([a all-data]) (third a))) (length all-data))))
-    (render-regraph-with-port
-     (list regraph)
+       (foldr (lambda (d r) (+ (first d) r)) 0 all-data)
+       (foldr (lambda (d r) (+ (second d) r)) 0 all-data)
+       (foldr (lambda (d r) (+ (third d) r)) 0 all-data)))
+    (render-regraph-info-with-port
+     all-regraphs
      average-port
      averages)))
      
