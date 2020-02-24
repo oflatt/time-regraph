@@ -133,21 +133,26 @@
         (define begin-time (current-inexact-milliseconds))
         (define begin-merge merge-time)
         (define begin-rebuild rebuild-time)
+        (define begin-find-matches find-matches-time)
         (run-regraph regraph iteration-limit iters-file-out)
         (define after (current-inexact-milliseconds))
         (define data
           (list
            (- after begin-time)
            (- merge-time begin-merge)
-           (- rebuild-time begin-rebuild)))
+           (- rebuild-time begin-rebuild)
+           (- find-matches-time begin-find-matches)))
         (render-regraph-info (list regraph) time-file
                              data)
         data))
+    
     (define averages
       (list
        (foldr (lambda (d r) (+ (first d) r)) 0 all-data)
        (foldr (lambda (d r) (+ (second d) r)) 0 all-data)
-       (foldr (lambda (d r) (+ (third d) r)) 0 all-data)))
+       (foldr (lambda (d r) (+ (third d) r)) 0 all-data)
+       (foldr (lambda (d r) (+ (fourth d) r)) 0 all-data)))
+    
     (render-regraph-info-with-port
      all-regraphs
      average-port
