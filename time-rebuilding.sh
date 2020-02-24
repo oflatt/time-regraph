@@ -1,4 +1,5 @@
 
+export PATH="$PATH:/opt/racket-7.2/bin/"
 
 cd ../regraph
 git checkout rebuilding
