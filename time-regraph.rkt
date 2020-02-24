@@ -28,28 +28,29 @@
        (cons i (read-math port))])))
 
 ;; spawns next regraph or returns false if its the end of file
-(define (spawn-regraph port)
+(define (spawn-regraph port node-limit)
   (define exprs (read-math port))
   (if (empty? exprs)
       (if end
           #f
-          (make-regraph (read-math port)))
-      (make-regraph exprs)))
+          (make-regraph (read-math port) #:limit node-limit))
+      (make-regraph exprs #:limit node-limit)))
 
-(define (spawn-all-regraphs port)
+
+(define (spawn-all-regraphs port node-limit)
   (set! end #f)
-  (define re (spawn-regraph port))
+  (define re (spawn-regraph port node-limit))
     (if re
-        (cons re (spawn-all-regraphs port))
+        (cons re (spawn-all-regraphs port node-limit))
         empty))
 
-(define (run-regraph regraph times node-limit iters-file)
+(define (run-regraph regraph times iters-file)
   (define last-i
     (for/or ([i (range times)])
       (define initial-cnt (regraph-count regraph))
       ((rule-phase rules-in rules-out) regraph)
       (if
-       (< initial-cnt (regraph-count regraph) node-limit)
+       (< initial-cnt (regraph-count regraph) (regraph-limit regraph))
        #f
        i)))
   (unless (rebuilding?)
@@ -102,9 +103,14 @@
                        (string-append (number->string node-limit) "-"
                                       exprs-name "-iters.txt"))
            #:exists 'replace)))
+
+    (define used-node-limit
+      (if (rebuilding?)
+          #f
+          node-limit))
       
     (define all-regraphs
-      (spawn-all-regraphs suite-port))
+      (spawn-all-regraphs suite-port used-node-limit))
     (define iters-file-in
       (if (rebuilding?)
           (open-input-file
@@ -125,7 +131,7 @@
         (define begin-time (current-inexact-milliseconds))
         (define begin-merge merge-time)
         (define begin-rebuild rebuild-time)
-        (run-regraph regraph iteration-limit node-limit iters-file-out)
+        (run-regraph regraph iteration-limit iters-file-out)
         (define after (current-inexact-milliseconds))
         (define data
           (list
