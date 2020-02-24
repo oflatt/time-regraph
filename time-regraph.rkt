@@ -52,9 +52,12 @@
       (if
        (and
         (< initial-cnt (regraph-count regraph))
-        (or (not (regraph-limit regraph)) (< (regraph-count regraph) (regraph-limit regraph))))
+        (or (not (regraph-limit regraph)) (< (regraph-count regraph) (regraph-limit regraph)))
+        (or (not match-limit) (<= (regraph-match-count regraph) match-limit)))
        #f
        i)))
+  (display "Last iteration: ")
+  (println last-i)
   (unless (rebuilding?)
     (displayln (+ (regraph-match-count regraph) 1) iters-file)))
 
