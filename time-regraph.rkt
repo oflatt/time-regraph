@@ -44,11 +44,11 @@
         (cons re (spawn-all-regraphs port node-limit))
         empty))
 
-(define (run-regraph regraph times iters-file)
+(define (run-regraph regraph match-limit iters-file)
   (define last-i
-    (for/or ([i (range times)])
+    (for/or ([i (range 100000000000)])
       (define initial-cnt (regraph-count regraph))
-      ((rule-phase rules-in rules-out) regraph)
+      ((rule-phase rules-in rules-out #:match-limit match-limit) regraph)
       (if
        (and
         (< initial-cnt (regraph-count regraph))
@@ -56,7 +56,7 @@
        #f
        i)))
   (unless (rebuilding?)
-    (displayln (+ last-i 1) iters-file)))
+    (displayln (+ (regraph-match-count regraph) 1) iters-file)))
 
 (define (render-regraph-info-with-port all-regraphs port data)
   (display (exact->inexact (/ (first data) (length all-regraphs))) port)
@@ -126,15 +126,15 @@
         (display "Regraph " )
         (displayln (number->string i))
         (flush-output)
-        (define iteration-limit
+        (define match-limit
           (if (rebuilding?)
               (read iters-file-in)
-              10000000))
+              #f))
         (define begin-time (current-inexact-milliseconds))
         (define begin-merge merge-time)
         (define begin-rebuild rebuild-time)
         (define begin-find-matches find-matches-time)
-        (run-regraph regraph iteration-limit iters-file-out)
+        (run-regraph regraph match-limit iters-file-out)
         (define after (current-inexact-milliseconds))
         (define data
           (list
