@@ -7295,7 +7295,6 @@ e
 (+ (exp x) (exp (- x)))
 (+ (exp (* -1 x)) (exp x))
 "NEW BATCH"
-"NEW BATCH"
 (/ (- (exp x) (exp (- x))) 2.0)
 "NEW BATCH"
 (/ (exp (exp x)) (exp (exp (- x))))
@@ -24371,7 +24370,6 @@ g
 (+ (log a) (log b))
 (- (+ (log (/ 1 a)) (log (/ 1 b))))
 (- (* 2 (log -1)) (+ (log (/ -1 b)) (log (/ -1 a))))
-"NEW BATCH"
 "NEW BATCH"
 (- (/ x0 (- 1.0 x1)) x0)
 "NEW BATCH"

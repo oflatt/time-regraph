@@ -8,7 +8,7 @@
 
 
 (define rebuilding? (make-parameter #f))
-(define number-timing-iterations (make-parameter 4))
+(define number-timing-iterations (make-parameter 3))
 
 (define rules-exprs-port (open-input-file "./rules.txt"))
 (define rules-in (read rules-exprs-port))
@@ -50,7 +50,9 @@
       (define initial-cnt (regraph-count regraph))
       ((rule-phase rules-in rules-out) regraph)
       (if
-       (< initial-cnt (regraph-count regraph) (regraph-limit regraph))
+       (and
+        (< initial-cnt (regraph-count regraph))
+        (or (not (regraph-limit regraph)) (< (regraph-count regraph) (regraph-limit regraph))))
        #f
        i)))
   (unless (rebuilding?)
@@ -139,7 +141,8 @@
            (- merge-time begin-merge)
            (- rebuild-time begin-rebuild)))
         (render-regraph-info (list regraph) time-file
-                             data)))
+                             data)
+        data))
     (define averages
       (list
        (foldr (lambda (d r) (+ (first d) r)) 0 all-data)
