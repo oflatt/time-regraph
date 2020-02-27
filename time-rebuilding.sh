@@ -1,9 +1,9 @@
 
 export PATH="$PATH:/opt/racket-7.2/bin/"
 
-cd ../regraph
+cd ./regraph
 git checkout rebuilding
 git pull
 raco make -v main.rkt
-cd ../time-regraph
+cd ..
 racket time-regraph.rkt --rebuild

@@ -1,7 +1,7 @@
 #lang racket
 
-(require "../regraph/main.rkt")
-(require "../regraph/egraph.rkt")
+(require "./regraph/main.rkt")
+(require "./regraph/egraph.rkt")
 (require (except-in profile profile))
 (require profile/render-text)
 (require profile/analyzer)
