@@ -1,3 +1,4 @@
+#!/bin/bash
 
 export PATH="$PATH:/opt/racket-7.2/bin/"
 

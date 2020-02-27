@@ -1,6 +1,9 @@
+#!/bin/bash
 
+if [ ! -d regraph ] ; then
+    git clone https://github.com/pavpanchekha/regraph
+fi
 
-git clone https://github.com/pavpanchekha/regraph
 bash ./time-upwards.sh
 bash ./time-rebuilding.sh
 
