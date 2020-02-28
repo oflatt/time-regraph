@@ -73,18 +73,9 @@
   (render-regraph-info-with-port all-regraphs time-file data)
   (render-regraph-info-with-port all-regraphs (current-output-port) data))
 
-(define (folder-string)
-  (cond
-    [(rebuilding?)
-     "timing-rebuilding"]
-    [else
-     "timing-upwards"]))
-
-(define (time-suite filename)
+(define (time-suite filename folder)
   (define average-port
-    (open-output-file (build-path (current-directory)
-                                 (folder-string)
-                                 "averages.txt")
+    (open-output-file (build-path (current-directory) folder "averages.txt")
                      #:exists 'replace))
   
   (for ([i (range (number-timing-iterations))])
@@ -96,7 +87,7 @@
     (define suite-port (open-input-file (build-path "exprs" filename)))
     (define time-file (open-output-file
                        (build-path (current-directory)
-                                   (folder-string)
+                                   folder
                                    (string-append (number->string node-limit) "-"
                                                   exprs-name "-total.txt"))
                        #:exists 'replace))
@@ -169,9 +160,9 @@
    [("-r" "--rebuild") "Time regraph with rebuilding enabled"
                        (rebuilding? #t)])
   
-
+  #:args (folder)
   (for ([expr-file (directory-list (build-path (current-directory) "exprs"))])
     (displayln "#########################")
     (display "Timing file: ")
     (displayln (path->string expr-file))
-    (time-suite expr-file)))
+    (time-suite expr-file folder)))

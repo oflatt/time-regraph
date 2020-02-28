@@ -7,4 +7,5 @@ git checkout duplicates-fixed-2
 git pull
 raco make -v main.rkt
 cd ..
-racket time-regraph.rkt
+make -p timing-upwards
+racket time-regraph.rkt timing-upwards

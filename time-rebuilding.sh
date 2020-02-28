@@ -7,4 +7,5 @@ git checkout rebuilding
 git pull
 raco make -v main.rkt
 cd ..
-racket time-regraph.rkt --rebuild
+make -p timing-rebuilding
+racket time-regraph.rkt --rebuild timing-rebuilding
