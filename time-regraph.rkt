@@ -154,15 +154,18 @@
      
 
 (module+ main
-  (command-line 
-   #:program "time-rebuilding"
-   #:once-each
-   [("-r" "--rebuild") "Time regraph with rebuilding enabled"
-                       (rebuilding? #t)])
+  (define results-folder
+    (command-line 
+     #:program "time-rebuilding"
+     #:once-each
+     [("-r" "--rebuild") "Time regraph with rebuilding enabled"
+                         (rebuilding? #t)]
+     #:args (folder)
+     folder))
   
-  #:args (folder)
+  
   (for ([expr-file (directory-list (build-path (current-directory) "exprs"))])
     (displayln "#########################")
     (display "Timing file: ")
     (displayln (path->string expr-file))
-    (time-suite expr-file folder)))
+    (time-suite expr-file results-folder)))
