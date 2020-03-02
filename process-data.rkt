@@ -1,5 +1,6 @@
 #lang racket
 
+(require plot)
 (define folder-out (make-parameter "processed"))
 
 (define (read-all-lines port)
@@ -41,7 +42,7 @@
         (hash-set! table bench-name (make-hash)))
       (hash-set! (hash-ref table bench-name)
                  num-size
-                 (compute-averages data)))))
+                 data))))
 
 (define (display-line data port)
   (display (first data) port)
@@ -67,13 +68,13 @@
 
   ; hash of lists of data
   (define all-averages-data (make-hash))
-  (for ([(key averages) data-table])
+  (for ([(key bench-data) data-table])
     (define table-file (open-output-file (build-path (current-directory) dir-name
                                                      (string-append key ".txt"))
                                          #:exists 'replace))
-    (for ([row (hash-map averages
+    (for ([row (hash-map bench-data
                          (lambda (num data)
-                           (list num data))
+                           (list num (compute-averages data)))
                          #t)])
       (unless (hash-has-key? all-averages-data (first row))
         (hash-set! all-averages-data (first row) (list)))
@@ -87,10 +88,46 @@
     (hash-set! all-averages key (compute-averages data)))
   (displayln name)
   (for ([row (hash-map all-averages (lambda (num data) (list num data)) #t)])
-    (displayln row)))
+    (displayln row))
+
+  data-table)
+
+
+(define (get-total-time nodemap)
+  (define data (hash-ref nodemap 5000))
+  (for/list ([r data])
+    (first r)))
+
+(define (get-search-time nodemap)
+  (define data (hash-ref nodemap 5000))
+  (for/list ([r data])
+    (fourth r)))
+
+
+(define (make-search-plot utable rtable filename label get-function)
+  ;; keys are benchmark and values are a pair of search time points
+  (define vector-table (make-hash))
+  (for ([(key nodemap) utable])
+    (hash-set! vector-table key
+               (map vector (get-function nodemap)
+                    (get-function (hash-ref rtable key)))))
+
+  (define all-points
+    (flatten
+     (for/list ([(key vectors) vector-table])
+       vectors)))
+
   
+  (plot-file
+   (list (function (λ (x) x) #:color 0 #:style 'dot)
+         (points all-points))
+   (string-append filename ".png")
+   #:x-label (string-append "upwards merging " label)
+   #:y-label (string-append "rebuliding " label)))
 
 (module+ main
-  (start-process "upwards")
-  (start-process "rebuilding")
+  (define upwards-table (start-process "upwards"))
+  (define rebuild-table (start-process "rebuilding"))
+  (make-search-plot upwards-table rebuild-table "total-time" "total time" get-total-time)
+  (make-search-plot upwards-table rebuild-table "search-time" "search time" get-search-time)
   )
