@@ -8,7 +8,7 @@
 
 
 (define rebuilding? (make-parameter #f))
-(define number-timing-iterations (make-parameter 3))
+(define iteration-options '(2500 5000 7500))
 
 (define rules-exprs-port (open-input-file "./rules.txt"))
 (define rules-in (read rules-exprs-port))
@@ -56,18 +56,12 @@
         (or (not match-limit) (<= (regraph-match-count regraph) match-limit)))
        #f
        i)))
-  (display "Last iteration: ")
-  (println last-i)
-  (unless (rebuilding?)
-    (displayln (+ (regraph-match-count regraph) 1) iters-file)))
+  (printf "Last iteration: ~a\n" last-i)
+  (fprintf iters-file "~a\n" (+ (regraph-match-count regraph) 1)))
 
 (define (render-regraph-info-with-port all-regraphs port data)
-  (display (exact->inexact (/ (first data) (length all-regraphs))) port)
-  (for ([ele (rest data)])
-    (display ", " port)
-    (display (exact->inexact (/ ele (length all-regraphs))) port))
-  (display "\n" port))
-  
+  (fprintf port "~a\n"
+           (string-join (map (λ (ele) (~a (exact->inexact (/ ele (length all-regraphs))))) data) ",")))
 
 (define (render-regraph-info all-regraphs time-file data)
   (render-regraph-info-with-port all-regraphs time-file data)
@@ -78,52 +72,37 @@
     (open-output-file (build-path (current-directory) folder "averages.txt")
                      #:exists 'replace))
   
-  (for ([i (range (number-timing-iterations))])
+  (for ([node-limit (in-list iteration-options)])
     (define exprs-name
       (substring (path->string filename) 0 (- (string-length (path->string filename)) 4)))
-    (define node-limit (+ 2500 (* i 2500)))
-    (display "Timing with node limit: ")
-    (displayln (number->string node-limit))
-    (define suite-port (open-input-file (build-path "exprs" filename)))
+    (printf "Timing with node limit: ~a\n" (number->string node-limit))
+    (define suite-port (open-input-file filename))
     (define time-file (open-output-file
                        (build-path (current-directory)
                                    folder
                                    (string-append (number->string node-limit) "-"
                                                   exprs-name "-total.txt"))
                        #:exists 'replace))
+    (define iters-file-name
+      (build-path (current-directory) (format "~a-~a-iters.txt" node-limit exprs-name)))
+
+    (define match-limit
+      (if (rebuilding?)
+          (call-with-input-file iters-file-name read)
+          #f))
+
     (define iters-file-out
       (if (rebuilding?)
-          #f
-          (open-output-file
-           (build-path (current-directory)
-                       (string-append (number->string node-limit) "-"
-                                      exprs-name "-iters.txt"))
-           #:exists 'replace)))
+          (open-output-nowhere)
+          (open-output-file iters-file-name #:exists 'replace)))
 
-    (define used-node-limit
-      (if (rebuilding?)
-          #f
-          node-limit))
-      
     (define all-regraphs
-      (spawn-all-regraphs suite-port used-node-limit))
-    (define iters-file-in
-      (if (rebuilding?)
-          (open-input-file
-           (build-path (current-directory)
-                       (string-append (number->string node-limit) "-"
-                                      exprs-name "-iters.txt")))
-          #f))
+      (spawn-all-regraphs suite-port (and (rebuilding? node-limit))))
 
     (define all-data
       (for/list ([regraph all-regraphs] [i (length all-regraphs)])
-        (display "Regraph " )
-        (displayln (number->string i))
-        (flush-output)
-        (define match-limit
-          (if (rebuilding?)
-              (read iters-file-in)
-              #f))
+        (fprintf "Regraph ~a\n" i)
+
         (define begin-time (current-inexact-milliseconds))
         (define begin-merge merge-time)
         (define begin-rebuild rebuild-time)
@@ -154,18 +133,12 @@
      
 
 (module+ main
-  (define results-folder
-    (command-line 
-     #:program "time-rebuilding"
-     #:once-each
-     [("-r" "--rebuild") "Time regraph with rebuilding enabled"
-                         (rebuilding? #t)]
-     #:args (folder)
-     folder))
-  
-  
-  (for ([expr-file (directory-list (build-path (current-directory) "exprs"))])
-    (displayln "#########################")
-    (display "Timing file: ")
-    (displayln (path->string expr-file))
-    (time-suite expr-file results-folder)))
+  (command-line 
+   #:program "time-rebuilding"
+   #:once-each
+   [("-r" "--rebuild") "Time regraph with rebuilding enabled"
+    (rebuilding? #t)]
+   #:args (folder . expr-files)
+   (for ([expr-file expr-files])
+     (printf "#########################\nTiming file: ~a\n" expr-file)
+     (time-suite expr-file folder))))
