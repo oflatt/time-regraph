@@ -1,6 +1,6 @@
 #lang racket
 
-(require plot)
+(require plot/no-gui)
 (define folder-out (make-parameter "processed"))
 
 (define (read-all-lines port)
