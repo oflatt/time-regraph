@@ -64,6 +64,9 @@
   (define dir-name (string-append "tables-" name))
   (unless (directory-exists? dir-name)
     (make-directory (build-path (current-directory) dir-name)))
+
+  ; hash of lists of data
+  (define all-averages-data (make-hash))
   (for ([(key averages) data-table])
     (define table-file (open-output-file (build-path (current-directory) dir-name
                                                      (string-append key ".txt"))
@@ -72,7 +75,20 @@
                          (lambda (num data)
                            (list num data))
                          #t)])
-      (display-line (second row) table-file))))
+      (unless (hash-has-key? all-averages-data (first row))
+        (hash-set! all-averages-data (first row) (list)))
+      (hash-set! all-averages-data
+                 (first row)
+                 (cons (second row) (hash-ref all-averages-data (first row))))
+      (display-line (second row) table-file)))
+  
+  (define all-averages (make-hash))
+  (for ([(key data) all-averages-data])
+    (hash-set! all-averages key (compute-averages data)))
+  (displayln name)
+  (for ([row (hash-map all-averages (lambda (num data) (list num data)) #t)])
+    (displayln row)))
+  
 
 (module+ main
   (start-process "upwards")
