@@ -27,12 +27,12 @@ if [ ! -d regraph ] ; then
 fi
 
 if [[ $1 = "upwards" ]]; then
-    run_branch duplicates-fixed-2 timing-upwards/
+    time-upwards
 elif [[ $1 = "rebuilding" ]]; then
-    run_branch rebuilding timing-rebuilding/ --rebuild
+    time-rebuilding
 else
-    "$0" upwards
-    "$0" rebuilding
+    time-upwards
+    time-rebuilding
 fi
 
-
+racket process-data.rkt
