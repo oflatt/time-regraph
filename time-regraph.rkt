@@ -44,11 +44,12 @@
         (cons re (spawn-all-regraphs port node-limit))
         empty))
 
-(define (run-regraph regraph match-limit iters-file)
+(define (run-regraph regraph match-limit iters-file match-count-port)
   (define last-i
     (for/or ([i (range 100000000000)])
       (define initial-cnt (regraph-count regraph))
       ((rule-phase rules-in rules-out #:match-limit match-limit) regraph)
+      (fprintf match-count-port "~a\n" (regraph-match-count regraph))
       (if
        (and
         (< initial-cnt (regraph-count regraph))
@@ -71,7 +72,12 @@
 (define (time-suite filename folder)
   (define average-port
     (open-output-file (build-path (current-directory) folder "averages.txt")
-                     #:exists 'replace))
+                      #:exists 'replace))
+  (define match-count-port
+    (open-output-file (build-path (current-directory) folder
+                                  (if (rebuilding?)
+                                      "match-counts-rebuilding.txt"
+                                      "match-counts-upwards.txt"))))
   
   (for ([node-limit (in-list iteration-options)])
     (define-values (suite-folder suite-file unused-flag) (split-path (string->path filename)))
@@ -115,7 +121,7 @@
         (define begin-merge merge-time)
         (define begin-rebuild rebuild-time)
         (define begin-find-matches find-matches-time)
-        (run-regraph regraph match-limit iters-file-out)
+        (run-regraph regraph match-limit iters-file-out match-count-port)
         (define after (current-inexact-milliseconds))
         (define data
           (list
