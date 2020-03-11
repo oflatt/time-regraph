@@ -65,7 +65,8 @@
 
 (define (render-regraph-info all-regraphs time-file data)
   (render-regraph-info-with-port all-regraphs time-file data)
-  (render-regraph-info-with-port all-regraphs (current-output-port) data))
+  (render-regraph-info-with-port all-regraphs (current-output-port) data)
+  (flush-output))
 
 (define (time-suite filename folder)
   (define average-port
@@ -73,10 +74,10 @@
                      #:exists 'replace))
   
   (for ([node-limit (in-list iteration-options)])
-    (define exprs-name
-      (substring (path->string filename) 0 (- (string-length (path->string filename)) 4)))
-    (printf "Timing with node limit: ~a\n" (number->string node-limit))
+    (define-values (suite-folder suite-file unused-flag) (split-path (string->path filename)))
+    (define exprs-name (path->string (path-replace-extension suite-file "")))
     (define suite-port (open-input-file filename))
+    (printf "Timing with node limit: ~a\n" (number->string node-limit))
     (define time-file (open-output-file
                        (build-path (current-directory)
                                    folder
@@ -86,22 +87,29 @@
     (define iters-file-name
       (build-path (current-directory) (format "~a-~a-iters.txt" node-limit exprs-name)))
 
-    (define match-limit
-      (if (rebuilding?)
-          (call-with-input-file iters-file-name read)
-          #f))
-
     (define iters-file-out
       (if (rebuilding?)
           (open-output-nowhere)
           (open-output-file iters-file-name #:exists 'replace)))
 
     (define all-regraphs
-      (spawn-all-regraphs suite-port (and (rebuilding? node-limit))))
+      (spawn-all-regraphs suite-port (and (not (rebuilding?)) node-limit)))
+
+    (define iters-file
+      (if (rebuilding?)
+          (open-input-file iters-file-name)
+          #f))
 
     (define all-data
       (for/list ([regraph all-regraphs] [i (length all-regraphs)])
-        (fprintf "Regraph ~a\n" i)
+        (fprintf (current-output-port)
+                 "Regraph ~a\n" i)
+        (flush-output)
+
+        (define match-limit
+          (if (rebuilding?)
+              (read iters-file)
+              #f))
 
         (define begin-time (current-inexact-milliseconds))
         (define begin-merge merge-time)

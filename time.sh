@@ -9,7 +9,7 @@ run_branch () {
     shift
     git -C regraph checkout "$branch"
     git -C regraph pull
-    raco make -v main.rkt
+    raco make -v ./regraph/main.rkt
     mkdir -p "$dir"
     racket time-regraph.rkt "$@" "$dir" exprs/*.txt
 }
