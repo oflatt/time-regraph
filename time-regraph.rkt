@@ -74,10 +74,7 @@
     (open-output-file (build-path (current-directory) folder "averages.txt")
                       #:exists 'replace))
   (define match-count-port
-    (open-output-file (build-path (current-directory) folder
-                                  (if (rebuilding?)
-                                      "match-counts-rebuilding.txt"
-                                      "match-counts-upwards.txt"))))
+    (open-output-file (build-path (current-directory) folder "match-counts-verification.txt") #:exists 'replace))
   
   (for ([node-limit (in-list iteration-options)])
     (define-values (suite-folder suite-file unused-flag) (split-path (string->path filename)))
