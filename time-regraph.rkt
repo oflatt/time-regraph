@@ -7,6 +7,8 @@
 (require profile/analyzer)
 
 
+(provide iteration-options)
+
 (define rebuilding? (make-parameter #f))
 (define iteration-options '(2500 5000 7500))
 
@@ -103,45 +105,31 @@
           (open-input-file limits-file-name)
           #f))
 
-    (define all-data
-      (for/list ([regraph all-regraphs] [i (length all-regraphs)])
-        (fprintf (current-output-port)
-                 "Regraph ~a\n" i)
-        (flush-output)
+    (for/list ([regraph all-regraphs] [i (length all-regraphs)])
+      (fprintf (current-output-port)
+               "Regraph ~a\n" i)
+      (flush-output)
 
-        (define match-limit
-          (if (rebuilding?)
-              (read limits-file)
-              #f))
+      (define match-limit
+        (if (rebuilding?)
+            (read limits-file)
+            #f))
 
-        (define begin-time (current-inexact-milliseconds))
-        (define begin-merge merge-time)
-        (define begin-rebuild rebuild-time)
-        (define begin-find-matches find-matches-time)
-        (run-regraph regraph match-limit limits-file-out match-count-port)
-        (define after (current-inexact-milliseconds))
-        (define data
-          (list
-           (- after begin-time)
-           (- merge-time begin-merge)
-           (- rebuild-time begin-rebuild)
-           (- find-matches-time begin-find-matches)))
-        (render-regraph-info (list regraph) time-file
-                             data)
-        data))
-    
-    (define averages
-      (list
-       (foldr (lambda (d r) (+ (first d) r)) 0 all-data)
-       (foldr (lambda (d r) (+ (second d) r)) 0 all-data)
-       (foldr (lambda (d r) (+ (third d) r)) 0 all-data)
-       (foldr (lambda (d r) (+ (fourth d) r)) 0 all-data)))
-    
-    (render-regraph-info-with-port
-     all-regraphs
-     average-port
-     averages)))
-     
+      (define begin-time (current-inexact-milliseconds))
+      (define begin-merge merge-time)
+      (define begin-rebuild rebuild-time)
+      (define begin-find-matches find-matches-time)
+      (run-regraph regraph match-limit limits-file-out match-count-port)
+      (define after (current-inexact-milliseconds))
+      (define data
+        (list
+         (- after begin-time)
+         (- merge-time begin-merge)
+         (- rebuild-time begin-rebuild)
+         (- find-matches-time begin-find-matches)))
+      (render-regraph-info (list regraph) time-file
+                           data))))
+
 
 (module+ main
   (command-line 

@@ -1,6 +1,9 @@
 #lang racket
 
 (require plot/no-gui)
+(require "./time-regraph.rkt")
+
+
 (define folder-out (make-parameter "processed"))
 
 (define (read-all-lines port)
@@ -30,6 +33,7 @@
   (for/list ([e sums])
     (/ e (length all-data))))
 
+
 (define (process-data data filename table)
   (unless (equal? (length data) 0)
     (define elements (string-split (path->string filename) "-"))
@@ -45,11 +49,16 @@
                  data))))
 
 (define (display-line data port)
-  (display (first data) port)
-  (for ([ele (rest data)])
-    (display ", " port)
-    (display ele port))
-  (display "\n" port))
+  (fprintf port "~a" (string-join (map ~a data) ",")))
+
+
+(define (make-averages-row port data-table node-limit)
+  (define all-data-for-node-limit
+    (for/fold
+        ([acc empty])
+        ([(benchname nodehash) data-table])
+      (append (hash-ref nodehash node-limit) acc)))
+  (display-line (cons node-limit (compute-averages all-data-for-node-limit)) port))
 
 (define (start-process name)
   (define data-table (make-hash))
@@ -66,30 +75,13 @@
   (unless (directory-exists? dir-name)
     (make-directory (build-path (current-directory) dir-name)))
 
-  ; hash of lists of data
-  (define all-averages-data (make-hash))
-  (for ([(key bench-data) data-table])
-    (define table-file (open-output-file (build-path (current-directory) dir-name
-                                                     (string-append key ".txt"))
-                                         #:exists 'replace))
-    (for ([row (hash-map bench-data
-                         (lambda (num data)
-                           (list num (compute-averages data)))
-                         #t)])
-      (unless (hash-has-key? all-averages-data (first row))
-        (hash-set! all-averages-data (first row) (list)))
-      (hash-set! all-averages-data
-                 (first row)
-                 (cons (second row) (hash-ref all-averages-data (first row))))
-      (display-line (second row) table-file)))
-  
-  (define all-averages (make-hash))
-  (for ([(key data) all-averages-data])
-    (hash-set! all-averages key (compute-averages data)))
-  (displayln name)
-  (for ([row (hash-map all-averages (lambda (num data) (list num data)) #t)])
-    (displayln row))
+  (define all-averages-file
+    (open-output-file (build-path (current-directory) dir-name "averages.txt")
+                      #:exists 'replace))
 
+  (for ([node-limit (in-list iteration-options)])
+    (make-averages-row all-averages-file data-table node-limit))
+  
   data-table)
 
 
@@ -112,10 +104,17 @@
                (map vector (get-function nodemap)
                     (get-function (hash-ref rtable key)))))
 
+  (define all-points-milliseconds
+    (filter
+     (lambda (point) (or (< 200 (vector-ref point 0)) (< 200 (vector-ref point 1))))
+     (flatten
+      (for/list ([(key vectors) vector-table])
+        vectors))))
+
   (define all-points
-    (flatten
-     (for/list ([(key vectors) vector-table])
-       vectors)))
+    (for/list ([vec all-points-milliseconds])
+      (for/vector ([num vec])
+        (/ num 1000))))
 
   (parameterize ([plot-x-transform  log-transform]
                  [plot-y-transform log-transform])
@@ -129,6 +128,6 @@
 (module+ main
   (define upwards-table (start-process "upwards"))
   (define rebuild-table (start-process "rebuilding"))
-  (make-search-plot upwards-table rebuild-table "total-time" "total time" get-total-time)
-  (make-search-plot upwards-table rebuild-table "search-time" "search time" get-search-time)
+  (make-search-plot upwards-table rebuild-table "total-time" "total time (seconds)" get-total-time)
+  (make-search-plot upwards-table rebuild-table "search-time" "search time (seconds)" get-search-time)
   )
