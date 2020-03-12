@@ -44,7 +44,7 @@
         (cons re (spawn-all-regraphs port node-limit))
         empty))
 
-(define (run-regraph regraph match-limit iters-file match-count-port)
+(define (run-regraph regraph match-limit limits-file match-count-port)
   (define last-i
     (for/or ([i (range 100000000000)])
       (define initial-cnt (regraph-count regraph))
@@ -58,7 +58,7 @@
        #f
        i)))
   (printf "Last iteration: ~a\n" last-i)
-  (fprintf iters-file "~a\n" (+ (regraph-match-count regraph) 1)))
+  (fprintf limits-file "~a\n" (+ (regraph-match-count regraph) 1)))
 
 (define (render-regraph-info-with-port all-regraphs port data)
   (fprintf port "~a\n"
@@ -87,20 +87,20 @@
                                    (string-append (number->string node-limit) "-"
                                                   exprs-name "-total.txt"))
                        #:exists 'replace))
-    (define iters-file-name
-      (build-path (current-directory) (format "~a-~a-iters.txt" node-limit exprs-name)))
+    (define limits-file-name
+      (build-path (current-directory) (format "~a-~a-match-limits.txt" node-limit exprs-name)))
 
-    (define iters-file-out
+    (define limits-file-out
       (if (rebuilding?)
           (open-output-nowhere)
-          (open-output-file iters-file-name #:exists 'replace)))
+          (open-output-file limits-file-name #:exists 'replace)))
 
     (define all-regraphs
       (spawn-all-regraphs suite-port (and (not (rebuilding?)) node-limit)))
 
-    (define iters-file
+    (define limits-file
       (if (rebuilding?)
-          (open-input-file iters-file-name)
+          (open-input-file limits-file-name)
           #f))
 
     (define all-data
@@ -111,14 +111,14 @@
 
         (define match-limit
           (if (rebuilding?)
-              (read iters-file)
+              (read limits-file)
               #f))
 
         (define begin-time (current-inexact-milliseconds))
         (define begin-merge merge-time)
         (define begin-rebuild rebuild-time)
         (define begin-find-matches find-matches-time)
-        (run-regraph regraph match-limit iters-file-out match-count-port)
+        (run-regraph regraph match-limit limits-file-out match-count-port)
         (define after (current-inexact-milliseconds))
         (define data
           (list
