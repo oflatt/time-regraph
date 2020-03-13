@@ -15,10 +15,14 @@ run_branch () {
 }
 
 time-upwards () {
+    rm -rf timing-upwards
+    rm -rf tables-upwards
     run_branch duplicates-fixed-2 timing-upwards/
 }
 
 time-rebuilding () {
+    rm -rf timing-rebuilding
+    rm -rf tables-rebuilding
     run_branch rebuilding timing-rebuilding/ --rebuild
 }
 
