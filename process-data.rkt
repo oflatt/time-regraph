@@ -49,7 +49,7 @@
                  data))))
 
 (define (display-line data port)
-  (fprintf port "~a" (string-join (map ~a data) ",")))
+  (fprintf port "~a\n" (string-join (map ~a data) ",")))
 
 
 (define (make-averages-row port data-table node-limit)
