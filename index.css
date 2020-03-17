@@ -1,0 +1,7 @@
+body { max-width: 60em; }
+
+table, figure { margin: 2em 0; width: 100%; }
+th { text-align: left; vertical-align: top; }
+td { text-align: right; }
+
+
