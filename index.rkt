@@ -30,7 +30,7 @@
            (for/list ([um data-um] [rb data-rb])
              (list
               `(tr (th ([rowspan "2"]) ,(~a (first um))) (th "Upward Merging") ,@(for/list ([cell (rest um)]) `(td ,(~r cell #:precision 1))))
-              `(tr (th "Rebuilding") ,@(for/list ([cell rb]) `(td ,(~r cell #:precision 1)))))))))
+              `(tr (th "Rebuilding") ,@(for/list ([cell (rest rb)]) `(td ,(~r cell #:precision 1)))))))))
       
       (figure
        (img ([src "search-time.png"]))(img ([src "total-time.png"])))))
