@@ -46,12 +46,18 @@
         (cons re (spawn-all-regraphs port node-limit))
         empty))
 
-(define (run-regraph regraph match-limit limits-file match-count-port)
+(define stop-on-iteration #f)
+(define iterations-counter 0)
+
+(define (run-regraph regraph match-limit limits-file match-count-port eclass-count-port)
   (define last-i
     (for/or ([i (range 100000000000)])
+      (set! iterations-counter (+ 1 iterations-counter))
+      (define debug? (equal? iterations-counter stop-on-iteration))
       (define initial-cnt (regraph-count regraph))
-      ((rule-phase rules-in rules-out #:match-limit match-limit) regraph)
+      ((rule-phase rules-in rules-out #:match-limit match-limit #:debug? debug?) regraph)
       (fprintf match-count-port "~a\n" (regraph-match-count regraph))
+      (fprintf eclass-count-port "~a\n" (regraph-eclass-count regraph))
       (if
        (and
         (< initial-cnt (regraph-count regraph))
@@ -60,7 +66,7 @@
        #f
        i)))
   (printf "Last iteration: ~a\n" last-i)
-  (fprintf limits-file "~a\n" (+ (regraph-match-count regraph) 1)))
+  (fprintf limits-file "~a\n" (- (regraph-match-count regraph) 1)))
 
 (define (render-regraph-info-with-port all-regraphs port data)
   (fprintf port "~a\n"
@@ -77,6 +83,9 @@
                       #:exists 'replace))
   (define match-count-port
     (open-output-file (build-path (current-directory) folder "match-counts-verification.txt") #:exists 'replace))
+
+  (define eclass-count-port
+    (open-output-file (build-path (current-directory) folder "eclass-counts-verification.txt") #:exists 'replace))
   
   (for ([node-limit (in-list iteration-options)])
     (define-values (suite-folder suite-file unused-flag) (split-path (string->path filename)))
@@ -119,7 +128,7 @@
       (define begin-merge merge-time)
       (define begin-rebuild rebuild-time)
       (define begin-find-matches find-matches-time)
-      (run-regraph regraph match-limit limits-file-out match-count-port)
+      (run-regraph regraph match-limit limits-file-out match-count-port eclass-count-port)
       (define after (current-inexact-milliseconds))
       (define data
         (list
