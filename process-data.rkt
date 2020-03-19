@@ -60,6 +60,11 @@
       (append (hash-ref nodehash node-limit) acc)))
   (display-line (cons node-limit (compute-averages all-data-for-node-limit)) port))
 
+(define (make-benchmark-row port data-table benchmark)
+  (define all-data-for-benchmark
+    (hash-ref (hash-ref data-table benchmark) 5000))
+  (display-line (cons benchmark (compute-averages all-data-for-benchmark)) port))
+
 (define (start-process name)
   (define data-table (make-hash))
   (for ([data-file (directory-list (build-path (current-directory)
@@ -79,8 +84,15 @@
     (open-output-file (build-path (current-directory) dir-name "averages.txt")
                       #:exists 'replace))
 
+  (define all-benchmarks-file
+    (open-output-file (build-path (current-directory) dir-name "benchmarks.txt")
+                      #:exists 'replace))
+
   (for ([node-limit (in-list iteration-options)])
     (make-averages-row all-averages-file data-table node-limit))
+
+  (for ([benchmark (hash-keys data-table)])
+    (make-benchmark-row all-benchmarks-file data-table benchmark))
   
   data-table)
 

@@ -10,8 +10,10 @@ upload () {
     mv search-time.png total-time.png report/
     mv tables-upwards/averages.txt report/upwards.txt
     mv tables-rebuilding/averages.txt report/rebuilding.txt
+    mv tables-upwards/benchmarks.txt report/benchmarks-upwards.txt
+    mv tables-rebuilding/benchmarks.txt report/benchmarks-rebuilding.txt
     cp index.css report/
-    racket index.rkt report/upwards.txt report/rebuilding.txt report/index.html
+    racket index.rkt report/upwards.txt report/rebuilding.txt report/benchmarks-upwards.txt report/benchmarks-rebuilding.txt report/index.html
     rsync --perms --chmod 755 --recursive report/ "$RHOST:$RHOSTDIR/$DIR"
 }
 
