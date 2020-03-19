@@ -120,7 +120,10 @@
                  [plot-y-transform log-transform])
     (plot-file
      (list (function (λ (x) x) #:color 0 #:style 'dot)
-           (points all-points))
+           (points
+            #:sym 'fullcircle1
+            #:alpha 0.2
+            all-points))
      (string-append filename ".png")
      #:x-label (string-append "upwards merging " label)
      #:y-label (string-append "rebuliding " label))))
