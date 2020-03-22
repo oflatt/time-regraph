@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e -x
 
 export PATH="$PATH:/opt/racket-7.5/bin/"
 
@@ -26,7 +27,7 @@ time-rebuilding () {
     run_branch rebuilding timing-rebuilding/ --rebuild
 }
 
-raco pkg install debug
+raco pkg install --auto debug
 
 if [ ! -d regraph ] ; then
     git clone https://github.com/pavpanchekha/regraph
