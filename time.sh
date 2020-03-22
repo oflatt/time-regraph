@@ -26,6 +26,8 @@ time-rebuilding () {
     run_branch rebuilding timing-rebuilding/ --rebuild
 }
 
+raco pkg install debug
+
 if [ ! -d regraph ] ; then
     git clone https://github.com/pavpanchekha/regraph
 fi
