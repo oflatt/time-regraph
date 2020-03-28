@@ -4,4 +4,5 @@ table, figure { margin: 2em 0; width: 100%; }
 th { text-align: right; vertical-align: middle; }
 td { text-align: right; }
 
+.error-text { color: red; }
 

@@ -14,7 +14,7 @@
            `(tr (th ([rowspan "2"]) ,(~a (first um))) (th "Upward Merging") ,@(for/list ([cell (rest um)]) `(td ,(~r cell #:precision 1))))
            `(tr (th "Rebuilding") ,@(for/list ([cell (rest rb)]) `(td ,(~r cell #:precision 1))))))))))
 
-(define (make-html port node-data-um node-data-rb benchmark-data-um benchmark-data-rb)
+(define (make-html port node-data-um node-data-rb benchmark-data-um benchmark-data-rb counts-same?)
   (define um5k (dict-ref node-data-um "5000"))
   (define rb5k (dict-ref node-data-rb "5000"))
 
@@ -30,18 +30,33 @@
       (title "Regraph evaluation results as of " ,(date->string (current-date))))
      (body
       (h1  "Regraph evaluation results as of " ,(date->string (current-date)))
+      ,(if counts-same?
+           `(p "Match counts correct!")
+           `(p
+             ([class "error-text"])
+             "Match counts differed!"))
       (p "Rebuilding is " (strong ,(~r (* (- overall-speedup 1) 100) #:precision '(= 2)) "%") " faster,"
          " with " (strong ,(~r congruence-speedup #:precision '(= 2)) "×") " faster congruence closure"
          " and " (strong ,(~r (* (- searching-speedup 1) 100) #:precision '(= 2)) "%") " faster searching.")
       ,(data-table "Node Limit" node-data-um node-data-rb)
       
       (figure
-       (img ([src "search-time.png"]))(img ([src "total-time.png"])))
+       (img ([src "search-time.png"]))(img ([src "total-time.png"]))
+       (img ([src "congruence-closure-time.png"])))
 
       ,(data-table "Benchmark Name" benchmark-data-um benchmark-data-rb)
 
       ))
    port))
+
+(define (match-counts-same? port1 port2)
+  (define l1 (read port1))
+  (define l2 (read port2))
+  (if
+   (equal? eof l1)
+   (equal? eof l2)
+   (and (equal? l1 l2) (match-counts-same? port1 port2))))
+
 
 (define (read-file port)
   (for/list ([line (in-port read-line port)])
@@ -50,12 +65,15 @@
 
 (module+ main
   (command-line 
-   #:args (table-um table-rb benchmark-table-um benchmark-table-rb output)
+   #:args (table-um table-rb benchmark-table-um benchmark-table-rb
+                    match-counts-um match-counts-rb output)
    (call-with-output-file
-       output #:exists 'replace
-       (λ (p)
-         (make-html p
-                    (call-with-input-file table-um read-file)
-                    (call-with-input-file table-rb read-file)
-                    (call-with-input-file benchmark-table-um read-file)
-                    (call-with-input-file benchmark-table-rb read-file))))))
+     output #:exists 'replace
+     (λ (p)
+       (make-html p
+                  (call-with-input-file table-um read-file)
+                  (call-with-input-file table-rb read-file)
+                  (call-with-input-file benchmark-table-um read-file)
+                  (call-with-input-file benchmark-table-rb read-file)
+                  (match-counts-same? (open-input-file match-counts-um)
+                                      (open-input-file match-counts-rb)))))))

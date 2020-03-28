@@ -107,6 +107,11 @@
   (for/list ([r data])
     (fourth r)))
 
+(define (get-congruence-time nodemap)
+  (define data (hash-ref nodemap 5000))
+  (for/list ([r data])
+    (+ (second r) (third r))))
+
 
 (define (make-search-plot utable rtable filename label get-function)
   ;; keys are benchmark and values are a pair of search time points
@@ -145,4 +150,5 @@
   (define rebuild-table (start-process "rebuilding"))
   (make-search-plot upwards-table rebuild-table "total-time" "total time (seconds)" get-total-time)
   (make-search-plot upwards-table rebuild-table "search-time" "search time (seconds)" get-search-time)
+  (make-search-plot upwards-table rebuild-table "congruence-closure-time" "congruence closure time (seconds)" get-congruence-time)
   )
