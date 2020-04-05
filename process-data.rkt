@@ -66,6 +66,7 @@
   (display-line (cons benchmark (compute-averages all-data-for-benchmark)) port))
 
 (define (start-process name)
+  (define dir-name (string-append "tables-" name))
   (define data-table (make-hash))
   (for ([data-file (directory-list (build-path (current-directory)
                                                (string-append "timing-" name)))])
@@ -76,7 +77,7 @@
      data-file
      data-table))
 
-  (define dir-name (string-append "tables-" name))
+  
   (unless (directory-exists? dir-name)
     (make-directory (build-path (current-directory) dir-name)))
 
@@ -113,7 +114,14 @@
     (+ (second r) (third r))))
 
 
-(define (make-search-plot utable rtable filename label get-function)
+(define (make-search-plot utable rtable filename label get-function filter-func)
+  (define all-data-folder (build-path (current-directory) "all-data"))
+  (unless (directory-exists? all-data-folder)
+    (make-directory all-data-folder))
+  (define all-file
+    (open-output-file (build-path (current-directory) "all-data"
+                                  (string-append "all-" filename  ".txt"))
+                      #:exists 'replace))
   ;; keys are benchmark and values are a pair of search time points
   (define vector-table (make-hash))
   (for ([(key nodemap) utable])
@@ -123,10 +131,13 @@
 
   (define all-points-milliseconds
     (filter
-     (lambda (point) (or (< 200 (vector-ref point 0)) (< 200 (vector-ref point 1))))
+     filter-func
      (flatten
       (for/list ([(key vectors) vector-table])
         vectors))))
+
+  (for ([p all-points-milliseconds])
+    (display-line (vector->list p) all-file))
 
   (define all-points
     (for/list ([vec all-points-milliseconds])
@@ -145,10 +156,17 @@
      #:x-label (string-append "upwards merging " label)
      #:y-label (string-append "rebuliding " label))))
 
+
 (module+ main
   (define upwards-table (start-process "upwards"))
   (define rebuild-table (start-process "rebuilding"))
-  (make-search-plot upwards-table rebuild-table "total-time" "total time (seconds)" get-total-time)
-  (make-search-plot upwards-table rebuild-table "search-time" "search time (seconds)" get-search-time)
-  (make-search-plot upwards-table rebuild-table "congruence-closure-time" "congruence closure time (seconds)" get-congruence-time)
+
+  (define (filter-low-points cutoff)
+    (lambda (point) (or (< cutoff (vector-ref point 0)) (< cutoff (vector-ref point 1)))))
+  (define filter-zeros
+    (lambda (point) (and (> (vector-ref point 0) 0) (> (vector-ref point 1) 0))))
+
+  (make-search-plot upwards-table rebuild-table "total-time" "total time (seconds)" get-total-time (filter-low-points 200))
+  (make-search-plot upwards-table rebuild-table "search-time" "search time (seconds)" get-search-time (filter-low-points 200))
+  (make-search-plot upwards-table rebuild-table "congruence-closure-time" "congruence closure time (seconds)" get-congruence-time filter-zeros)
   )
