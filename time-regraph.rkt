@@ -9,7 +9,6 @@
 
 (provide iteration-options)
 
-(define rebuilding? (make-parameter #f))
 (define iteration-options '(2500 5000 7500))
 
 (define rules-exprs-port (open-input-file "./rules.txt"))
@@ -30,20 +29,20 @@
        (cons i (read-math port))])))
 
 ;; spawns next regraph or returns false if its the end of file
-(define (spawn-regraph port node-limit)
+(define (spawn-regraph port node-limit rebuilding?)
   (define exprs (read-math port))
   (if (empty? exprs)
       (if end
           #f
           (make-regraph (read-math port) #:limit node-limit))
-      (make-regraph exprs #:limit node-limit)))
+      (make-regraph exprs #:limit node-limit #:rebuilding-enabled? rebuilding?)))
 
 
-(define (spawn-all-regraphs port node-limit)
+(define (spawn-all-regraphs port node-limit rebuilding?)
   (set! end #f)
-  (define re (spawn-regraph port node-limit))
+  (define re (spawn-regraph port node-limit rebuilding?))
     (if re
-        (cons re (spawn-all-regraphs port node-limit))
+        (cons re (spawn-all-regraphs port node-limit rebuilding?))
         empty))
 
 (define stop-on-iteration #f)
@@ -77,7 +76,7 @@
   (render-regraph-info-with-port all-regraphs (current-output-port) data)
   (flush-output))
 
-(define (time-suite filename folder)
+(define (time-suite filename folder rebuilding?)
   (define average-port
     (open-output-file (build-path (current-directory) folder "averages.txt")
                       #:exists 'replace))
@@ -99,18 +98,18 @@
                                                   exprs-name "-total.txt"))
                        #:exists 'replace))
     (define limits-file-name
-      (build-path (current-directory) (format "~a-~a-match-limits.txt" node-limit exprs-name)))
+      (build-path (current-directory) "limits" (format "~a-~a-match-limits.txt" node-limit exprs-name)))
 
     (define limits-file-out
-      (if (rebuilding?)
+      (if rebuilding?
           (open-output-nowhere)
           (open-output-file limits-file-name #:exists 'replace)))
 
     (define all-regraphs
-      (spawn-all-regraphs suite-port (and (not (rebuilding?)) node-limit)))
+      (spawn-all-regraphs suite-port (and (not rebuilding?) node-limit) rebuilding?))
 
     (define limits-file
-      (if (rebuilding?)
+      (if rebuilding?
           (open-input-file limits-file-name)
           #f))
 
@@ -120,7 +119,7 @@
       (flush-output)
 
       (define match-limit
-        (if (rebuilding?)
+        (if rebuilding?
             (read limits-file)
             #f))
 
@@ -141,12 +140,13 @@
 
 
 (module+ main
+  (define rebuilding? #f)
   (command-line 
    #:program "time-rebuilding"
    #:once-each
    [("-r" "--rebuild") "Time regraph with rebuilding enabled"
-    (rebuilding? #t)]
+    (set! rebuilding? #t)]
    #:args (folder . expr-files)
    (for ([expr-file expr-files])
      (printf "#########################\nTiming file: ~a\n" expr-file)
-     (time-suite expr-file folder))))
+     (time-suite expr-file folder rebuilding?))))

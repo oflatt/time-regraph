@@ -4,11 +4,9 @@ set -e -x
 export PATH="$PATH:/opt/racket-7.5/bin/"
 
 run_branch () {
-    branch="$1"
-    dir="$2"
+    dir="$1"
     shift
-    shift
-    git -C regraph checkout "$branch"
+    git -C regraph checkout upwards-rebuilding-combined
     git -C regraph pull
     raco make -v ./regraph/main.rkt
     mkdir -p "$dir"
@@ -18,14 +16,16 @@ run_branch () {
 time-upwards () {
     rm -rf timing-upwards
     rm -rf tables-upwards
-    run_branch duplicates-fixed-2 timing-upwards/
+    run_branch timing-upwards/
 }
 
 time-rebuilding () {
     rm -rf timing-rebuilding
     rm -rf tables-rebuilding
-    run_branch rebuilding timing-rebuilding/ --rebuild
+    run_branch timing-rebuilding/ --rebuild
 }
+
+mkdir -p "limits"
 
 if [ ! -d regraph ] ; then
     git clone https://github.com/pavpanchekha/regraph
