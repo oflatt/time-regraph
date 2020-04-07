@@ -55,7 +55,7 @@
       (define debug? (equal? iterations-counter stop-on-iteration))
       (define initial-cnt (regraph-count regraph))
       ((rule-phase rules-in rules-out #:match-limit match-limit #:debug? debug?) regraph)
-      (when (regrpah-rebuilding-enabled? regraph)
+      (when (regraph-rebuilding-enabled? regraph)
         ((rebuild-phase) regraph))
       (fprintf match-count-port "~a\n" (regraph-match-count regraph))
       (fprintf eclass-count-port "~a\n" (regraph-eclass-count regraph))
