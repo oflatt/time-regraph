@@ -6,7 +6,7 @@ export PATH="$PATH:/opt/racket-7.5/bin/"
 run_branch () {
     dir="$1"
     shift
-    git -C regraph checkout upwards-rebuilding-combined
+    git -C regraph checkout master
     git -C regraph pull
     raco make -v ./regraph/main.rkt
     mkdir -p "$dir"
