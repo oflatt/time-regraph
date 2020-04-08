@@ -57,17 +57,17 @@
       ((rule-phase rules-in rules-out #:match-limit match-limit #:debug? debug?) regraph)
       (when (regraph-rebuilding-enabled? regraph)
         ((rebuild-phase) regraph))
-      (fprintf match-count-port "~a\n" (regraph-match-count regraph))
+      (fprintf match-count-port "~a\n" (rinfo-match-count (regraph-rinfo regraph)))
       (fprintf eclass-count-port "~a\n" (regraph-eclass-count regraph))
       (if
        (and
         (< initial-cnt (regraph-count regraph))
         (or (not (regraph-limit regraph)) (< (regraph-count regraph) (regraph-limit regraph)))
-        (or (not match-limit) (<= (regraph-match-count regraph) match-limit)))
+        (or (not match-limit) (<= (rinfo-match-count (regraph-rinfo regraph)) match-limit)))
        #f
        i)))
   (printf "Last iteration: ~a\n" last-i)
-  (fprintf limits-file "~a\n" (- (regraph-match-count regraph) 1)))
+  (fprintf limits-file "~a\n" (- (rinfo-match-count (regraph-rinfo regraph)) 1)))
 
 (define (render-regraph-info-with-port all-regraphs port data)
   (fprintf port "~a\n"
@@ -127,16 +127,16 @@
 
       (define begin-time (current-inexact-milliseconds))
       (define begin-merge merge-time)
-      (define begin-rebuild rebuild-time)
-      (define begin-find-matches find-matches-time)
+      (define begin-rebuild (rinfo-rebuild-time (regraph-rinfo regraph)))
+      (define begin-find-matches (rinfo-search-time (regraph-rinfo  regraph)))
       (run-regraph regraph match-limit limits-file-out match-count-port eclass-count-port)
       (define after (current-inexact-milliseconds))
       (define data
         (list
          (- after begin-time)
          (- merge-time begin-merge)
-         (- rebuild-time begin-rebuild)
-         (- find-matches-time begin-find-matches)))
+         (- (rinfo-rebuild-time (regraph-rinfo regraph)) begin-rebuild)
+         (- (rinfo-search-time (regraph-rinfo regraph)) begin-find-matches)))
       (render-regraph-info (list regraph) time-file
                            data))))
 
