@@ -9,7 +9,7 @@
 
 (provide iteration-options)
 
-(define iteration-options '(2500 5000 7500))
+(define iteration-options '(5000))
 
 (define rules-exprs-port (open-input-file "./rules.txt"))
 (define rules-in (read rules-exprs-port))
@@ -23,10 +23,8 @@
       [(equal? eof i)
        (set! end #t)
        empty]
-      [(equal? i "NEW BATCH")
-       empty]
       [else
-       (cons i (read-math port))])))
+       i])))
 
 ;; spawns next regraph or returns false if its the end of file
 (define (spawn-regraph port node-limit rebuilding?)
@@ -54,7 +52,7 @@
       (set! iterations-counter (+ 1 iterations-counter))
       (define debug? (equal? iterations-counter stop-on-iteration))
       (define initial-cnt (regraph-count regraph))
-      ((rule-phase rules-in rules-out #:match-limit match-limit #:debug? debug?) regraph)
+      ((rule-phase rules-in rules-out #:match-limit match-limit) regraph)
       (when (regraph-rebuilding-enabled? regraph)
         ((rebuild-phase) regraph))
       (fprintf match-count-port "~a\n" (rinfo-match-count (regraph-rinfo regraph)))

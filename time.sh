@@ -10,7 +10,7 @@ run_branch () {
     git -C regraph pull
     raco make -v ./regraph/main.rkt
     mkdir -p "$dir"
-    racket time-regraph.rkt "$@" "$dir" exprs/*.txt
+    racket time-regraph.rkt "$@" "$dir" exprs/*.exprs
 }
 
 time-upwards () {
