@@ -37,7 +37,7 @@
 (define (process-data data filename table)
   (unless (equal? (length data) 0)
     (define elements (string-split (path->string filename) "-"))
-    (unless (not (equal? (length elements) 4))
+    (unless (not (equal? (length elements) 3))
       (define num-size (string->number (first elements)))
       (define bench-name (second elements))
       (unless
