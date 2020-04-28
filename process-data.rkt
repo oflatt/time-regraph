@@ -37,16 +37,17 @@
 (define (process-data data filename table)
   (unless (equal? (length data) 0)
     (define elements (string-split (path->string filename) "-"))
-    (unless (not (equal? (length elements) 3))
+    (when (equal? (length elements) 3)
       (define num-size (string->number (first elements)))
       (define bench-name (second elements))
-      (unless
-          (hash-has-key?
-           table bench-name)
-        (hash-set! table bench-name (make-hash)))
-      (hash-set! (hash-ref table bench-name)
-                 num-size
-                 data))))
+      (when num-size
+        (unless
+            (hash-has-key?
+             table bench-name)
+          (hash-set! table bench-name (make-hash)))
+        (hash-set! (hash-ref table bench-name)
+                   num-size
+                   data)))))
 
 (define (display-line data port)
   (fprintf port "~a\n" (string-join (map ~a data) ",")))
